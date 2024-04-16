@@ -159,9 +159,9 @@ public:
   void Get32Bytes(unsigned char *buff);
 
   char* GetBase2();
-  char* GetBase10();
+  char* GetBase10(char thousand_separator = 0);
   char* GetBase16();
-  char* GetBaseN(int n,const char *charset);
+  char* GetBaseN(int n,const char *charset,char thousand_separator = 0);
   char* GetBlockStr();
   char* GetC64Str(int nbDigit);
 
