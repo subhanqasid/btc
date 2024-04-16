@@ -2195,15 +2195,25 @@ int main(int argc, char **argv)	{
 				pretotal.Div(&seconds);
 				str_seconds = seconds.GetBase10();
 				str_pretotal = pretotal.GetBase10();
-				str_total = total.GetBase10();
-				
-				
+				str_total = total.GetBase10('_');
+				char str_range_ratio[2048];
+				if (!total.IsZero()) {
+					Int range_ratio;
+					range_ratio.Sub(&n_range_end, &n_range_start);
+					range_ratio.Div(&total, 0);
+					sprintf(str_range_ratio, ", 1:%s    ", range_ratio.GetBase10('_'));
+				}
+				else {
+					str_range_ratio[0] = 0;
+				}
+
+
 				if(pretotal.IsLower(&int_limits[0]))	{
 					if(FLAGMATRIX)	{
-						sprintf(buffer,"[+] Total %s keys in %s seconds: %s keys/s\n",str_total,str_seconds,str_pretotal);
+						sprintf(buffer,"[+] Total %s keys in %s seconds: %s keys/s%s\n",str_total,str_seconds,str_pretotal,str_range_ratio);
 					}
 					else	{
-						sprintf(buffer,"\r[+] Total %s keys in %s seconds: %s keys/s\r",str_total,str_seconds,str_pretotal);
+						sprintf(buffer,"\r[+] Total %s keys in %s seconds: %s keys/s%s\r",str_total,str_seconds,str_pretotal,str_range_ratio);
 					}
 				}
 				else	{
@@ -2222,14 +2232,14 @@ int main(int argc, char **argv)	{
 					div_pretotal.Div(&int_limits[salir ? i : i-1]);
 					str_divpretotal = div_pretotal.GetBase10();
 					if(FLAGMATRIX)	{
-						sprintf(buffer,"[+] Total %s keys in %s seconds: ~%s %s (%s keys/s)\n",str_total,str_seconds,str_divpretotal,str_limits_prefixs[salir ? i : i-1],str_pretotal);
+						sprintf(buffer,"[+] Total %s keys in %s seconds: ~%s %s (%s keys/s)%s\n",str_total,str_seconds,str_divpretotal,str_limits_prefixs[salir ? i : i-1],str_pretotal,str_range_ratio);
 					}
 					else	{
 						if(THREADOUTPUT == 1)	{
-							sprintf(buffer,"\r[+] Total %s keys in %s seconds: ~%s %s (%s keys/s)\r",str_total,str_seconds,str_divpretotal,str_limits_prefixs[salir ? i : i-1],str_pretotal);
+							sprintf(buffer,"\r[+] Total %s keys in %s seconds: ~%s %s (%s keys/s)%s\r",str_total,str_seconds,str_divpretotal,str_limits_prefixs[salir ? i : i-1],str_pretotal,str_range_ratio);
 						}
 						else	{
-							sprintf(buffer,"\r[+] Total %s keys in %s seconds: ~%s %s (%s keys/s)\r",str_total,str_seconds,str_divpretotal,str_limits_prefixs[salir ? i : i-1],str_pretotal);
+							sprintf(buffer,"\r[+] Total %s keys in %s seconds: ~%s %s (%s keys/s)%s\r",str_total,str_seconds,str_divpretotal,str_limits_prefixs[salir ? i : i-1],str_pretotal,str_range_ratio);
 						}
 					}
 					free(str_divpretotal);
@@ -5819,11 +5829,11 @@ void writevanitykey(bool compressed,Int *key)	{
 #endif
 	keys = fopen("VANITYKEYFOUND.txt","a+");
 	if(keys != NULL)	{
-		fprintf(keys,"Vanity Private Key: %s\npubkey: %s\nAddress %s\nrmd160 %s\n",hextemp,public_key_hex,address,hexrmd);
+		fprintf(keys,"Vanity Private Key: %s\npubkey: %s\nAddress %s\nrmd160 %s\n\n",hextemp,public_key_hex,address,hexrmd);
 		fclose(keys);
 	}
-	printf("\nVanity Private Key: %s\npubkey: %s\nAddress %s\nrmd160 %s\n",hextemp,public_key_hex,address,hexrmd);
-	
+	printf("\nVanity Private Key: %s\npubkey: %s\nAddress %s\nrmd160 %s\n\n",hextemp,public_key_hex,address,hexrmd);
+
 #if defined(_WIN64) && !defined(__CYGWIN__)
 	ReleaseMutex(write_keys);
 #else

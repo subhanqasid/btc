@@ -942,8 +942,8 @@ void  Int::SetBase16(const char *value) {
 
 // ------------------------------------------------
 
-char* Int::GetBase10() {
-  return GetBaseN(10,"0123456789");
+char* Int::GetBase10(char thousand_separator) {
+  return GetBaseN(10,"0123456789",thousand_separator);
 }
 
 // ------------------------------------------------
@@ -1014,7 +1014,7 @@ void  Int::SetBaseN(int n,const char *charset,const char *value) {
 
 // ------------------------------------------------
 
-char* Int::GetBaseN(int n,const char *charset) {
+char* Int::GetBaseN(int n,const char *charset,char thousand_separator) {
   char *ret = (char*) calloc(1,1024);
 
   Int N(this);
@@ -1044,8 +1044,11 @@ char* Int::GetBaseN(int n,const char *charset) {
   if (isNegative)
     ret[offset++] = '-';
 
-  for (int i = 0; i < digitslen; i++)
+  for (int i = 0; i < digitslen; i++) {
+    if (thousand_separator && (i > 0) && (i % 3 == digitslen % 3))
+      ret[offset++] = thousand_separator;
     ret[offset++] = charset[digits[digitslen - 1 - i]];
+  }
 
   if (offset == 0)
     ret[offset] = '0';
