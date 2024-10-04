@@ -12,7 +12,11 @@
     #include <unistd.h>
     #include <fcntl.h>
     #include <sys/syscall.h>
-    #include <linux/random.h>
+    #ifdef __unix__ || __unix
+		#include <linux/random.h>
+	#else
+		#include <random>
+	#endif
     #if defined(GRND_NONBLOCK)
         #define USE_GETRANDOM
     #endif

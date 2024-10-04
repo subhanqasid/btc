@@ -334,23 +334,29 @@ void Int::SetQWord(int n, uint64_t b) {
 	bits64[n] = b;
 }
 
+inline unsigned char subborrow(unsigned char c, uint64_t x, uint64_t y, uint64_t* result) {
+#if defined(__APPLE__)
+    return __builtin_ia32_subborrow_u64(c, x, y, result);
+#else
+    return _subborrow_u64(c, x, y, result);
+#endif
+}
+
 // ------------------------------------------------
 
 void Int::Sub(Int *a) {
-
-  unsigned char c = 0;
-  c = _subborrow_u64(c, bits64[0], a->bits64[0], bits64 +0);
-  c = _subborrow_u64(c, bits64[1], a->bits64[1], bits64 +1);
-  c = _subborrow_u64(c, bits64[2], a->bits64[2], bits64 +2);
-  c = _subborrow_u64(c, bits64[3], a->bits64[3], bits64 +3);
-  c = _subborrow_u64(c, bits64[4], a->bits64[4], bits64 +4);
+    unsigned char c = 0;
+    c = subborrow(c, bits64[0], a->bits64[0], bits64 + 0);
+    c = subborrow(c, bits64[1], a->bits64[1], bits64 + 1);
+    c = subborrow(c, bits64[2], a->bits64[2], bits64 + 2);
+    c = subborrow(c, bits64[3], a->bits64[3], bits64 + 3);
+    c = subborrow(c, bits64[4], a->bits64[4], bits64 + 4);
 #if NB64BLOCK > 5
-  c = _subborrow_u64(c, bits64[5], a->bits64[5], bits64 +5);
-  c = _subborrow_u64(c, bits64[6], a->bits64[6], bits64 +6);
-  c = _subborrow_u64(c, bits64[7], a->bits64[7], bits64 +7);
-  c = _subborrow_u64(c, bits64[8], a->bits64[8], bits64 +8);
+    c = subborrow(c, bits64[5], a->bits64[5], bits64 + 5);
+    c = subborrow(c, bits64[6], a->bits64[6], bits64 + 6);
+    c = subborrow(c, bits64[7], a->bits64[7], bits64 + 7);
+    c = subborrow(c, bits64[8], a->bits64[8], bits64 + 8);
 #endif
-
 }
 
 // ------------------------------------------------
@@ -358,16 +364,16 @@ void Int::Sub(Int *a) {
 void Int::Sub(Int *a,Int *b) {
 
   unsigned char c = 0;
-  c = _subborrow_u64(c, a->bits64[0], b->bits64[0], bits64 + 0);
-  c = _subborrow_u64(c, a->bits64[1], b->bits64[1], bits64 + 1);
-  c = _subborrow_u64(c, a->bits64[2], b->bits64[2], bits64 + 2);
-  c = _subborrow_u64(c, a->bits64[3], b->bits64[3], bits64 + 3);
-  c = _subborrow_u64(c, a->bits64[4], b->bits64[4], bits64 + 4);
+  c = subborrow(c, a->bits64[0], b->bits64[0], bits64 + 0);
+  c = subborrow(c, a->bits64[1], b->bits64[1], bits64 + 1);
+  c = subborrow(c, a->bits64[2], b->bits64[2], bits64 + 2);
+  c = subborrow(c, a->bits64[3], b->bits64[3], bits64 + 3);
+  c = subborrow(c, a->bits64[4], b->bits64[4], bits64 + 4);
 #if NB64BLOCK > 5
-  c = _subborrow_u64(c, a->bits64[5], b->bits64[5], bits64 + 5);
-  c = _subborrow_u64(c, a->bits64[6], b->bits64[6], bits64 + 6);
-  c = _subborrow_u64(c, a->bits64[7], b->bits64[7], bits64 + 7);
-  c = _subborrow_u64(c, a->bits64[8], b->bits64[8], bits64 + 8);
+  c = subborrow(c, a->bits64[5], b->bits64[5], bits64 + 5);
+  c = subborrow(c, a->bits64[6], b->bits64[6], bits64 + 6);
+  c = subborrow(c, a->bits64[7], b->bits64[7], bits64 + 7);
+  c = subborrow(c, a->bits64[8], b->bits64[8], bits64 + 8);
 #endif
 
 }
@@ -375,16 +381,16 @@ void Int::Sub(Int *a,Int *b) {
 void Int::Sub(uint64_t a) {
 
   unsigned char c = 0;
-  c = _subborrow_u64(c, bits64[0], a, bits64 + 0);
-  c = _subborrow_u64(c, bits64[1], 0, bits64 + 1);
-  c = _subborrow_u64(c, bits64[2], 0, bits64 + 2);
-  c = _subborrow_u64(c, bits64[3], 0, bits64 + 3);
-  c = _subborrow_u64(c, bits64[4], 0, bits64 + 4);
+  c = subborrow(c, bits64[0], a, bits64 + 0);
+  c = subborrow(c, bits64[1], 0, bits64 + 1);
+  c = subborrow(c, bits64[2], 0, bits64 + 2);
+  c = subborrow(c, bits64[3], 0, bits64 + 3);
+  c = subborrow(c, bits64[4], 0, bits64 + 4);
 #if NB64BLOCK > 5
-  c = _subborrow_u64(c, bits64[5], 0, bits64 + 5);
-  c = _subborrow_u64(c, bits64[6], 0, bits64 + 6);
-  c = _subborrow_u64(c, bits64[7], 0, bits64 + 7);
-  c = _subborrow_u64(c, bits64[8], 0, bits64 + 8);
+  c = subborrow(c, bits64[5], 0, bits64 + 5);
+  c = subborrow(c, bits64[6], 0, bits64 + 6);
+  c = subborrow(c, bits64[7], 0, bits64 + 7);
+  c = subborrow(c, bits64[8], 0, bits64 + 8);
 #endif
 
 }
@@ -392,16 +398,16 @@ void Int::Sub(uint64_t a) {
 void Int::SubOne() {
 
   unsigned char c = 0;
-  c = _subborrow_u64(c, bits64[0], 1, bits64 + 0);
-  c = _subborrow_u64(c, bits64[1], 0, bits64 + 1);
-  c = _subborrow_u64(c, bits64[2], 0, bits64 + 2);
-  c = _subborrow_u64(c, bits64[3], 0, bits64 + 3);
-  c = _subborrow_u64(c, bits64[4], 0, bits64 + 4);
+  c = subborrow(c, bits64[0], 1, bits64 + 0);
+  c = subborrow(c, bits64[1], 0, bits64 + 1);
+  c = subborrow(c, bits64[2], 0, bits64 + 2);
+  c = subborrow(c, bits64[3], 0, bits64 + 3);
+  c = subborrow(c, bits64[4], 0, bits64 + 4);
 #if NB64BLOCK > 5
-  c = _subborrow_u64(c, bits64[5], 0, bits64 + 5);
-  c = _subborrow_u64(c, bits64[6], 0, bits64 + 6);
-  c = _subborrow_u64(c, bits64[7], 0, bits64 + 7);
-  c = _subborrow_u64(c, bits64[8], 0, bits64 + 8);
+  c = subborrow(c, bits64[5], 0, bits64 + 5);
+  c = subborrow(c, bits64[6], 0, bits64 + 6);
+  c = subborrow(c, bits64[7], 0, bits64 + 7);
+  c = subborrow(c, bits64[8], 0, bits64 + 8);
 #endif
 
 }
@@ -444,16 +450,16 @@ bool Int::IsOdd() {
 void Int::Neg() {
 
 	volatile unsigned char c=0;
-	c = _subborrow_u64(c, 0, bits64[0], bits64 + 0);
-	c = _subborrow_u64(c, 0, bits64[1], bits64 + 1);
-	c = _subborrow_u64(c, 0, bits64[2], bits64 + 2);
-	c = _subborrow_u64(c, 0, bits64[3], bits64 + 3);
-	c = _subborrow_u64(c, 0, bits64[4], bits64 + 4);
+	c = subborrow(c, 0, bits64[0], bits64 + 0);
+	c = subborrow(c, 0, bits64[1], bits64 + 1);
+	c = subborrow(c, 0, bits64[2], bits64 + 2);
+	c = subborrow(c, 0, bits64[3], bits64 + 3);
+	c = subborrow(c, 0, bits64[4], bits64 + 4);
 #if NB64BLOCK > 5
-	c = _subborrow_u64(c, 0, bits64[5], bits64 + 5);
-	c = _subborrow_u64(c, 0, bits64[6], bits64 + 6);
-	c = _subborrow_u64(c, 0, bits64[7], bits64 + 7);
-	c = _subborrow_u64(c, 0, bits64[8], bits64 + 8);
+	c = subborrow(c, 0, bits64[5], bits64 + 5);
+	c = subborrow(c, 0, bits64[6], bits64 + 6);
+	c = subborrow(c, 0, bits64[7], bits64 + 7);
+	c = subborrow(c, 0, bits64[8], bits64 + 8);
 #endif
 
 }
@@ -959,7 +965,7 @@ char* Int::GetBlockStr() {
 	char bStr[256];
 	tmp[0] = 0;
 	for (int i = NB32BLOCK-3; i>=0 ; i--) {
-	  sprintf(bStr, "%08X", bits[i]);
+	  snprintf(bStr, sizeof(bStr), "%08X", bits[i]);
 	  strcat(tmp, bStr);
 	  if(i!=0) strcat(tmp, " ");
 	}
@@ -976,12 +982,12 @@ char * Int::GetC64Str(int nbDigit) {
   for (int i = 0; i< nbDigit; i++) {
     if (bits64[i] != 0) {
 #ifdef _WIN64
-      sprintf(bStr, "0x%016I64XULL", bits64[i]);
+      sprintf(bStr, "0x%016llXULL", bits64[i]);
 #else
-      sprintf(bStr, "0x%" PRIx64  "ULL", bits64[i]);
+    snprintf(bStr, sizeof(bStr), "0x%" PRIx64 "ULL", bits64[i]);
 #endif
     } else {
-      sprintf(bStr, "0ULL");
+        snprintf(bStr, sizeof(bStr), "0ULL");
     }
     strcat(tmp, bStr);
     if (i != nbDigit -1) strcat(tmp, ",");

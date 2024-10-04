@@ -17,6 +17,8 @@
 
 
 #include "Random.h"
+#include <fcntl.h>  // Necessário para O_RDONLY
+#include <unistd.h> // Necessário para read() e open()
 
 #if defined(_WIN64) && !defined(__CYGWIN__)
 #else
@@ -66,9 +68,9 @@ void rk_seed(unsigned long seed, rk_state *state)
 #define UPPER_MASK 0x80000000UL
 #define LOWER_MASK 0x7fffffffUL
 
-#ifdef _WIN64
+#ifdef _MSC_VER
 // Disable "unary minus operator applied to unsigned type, result still unsigned" warning.
-#pragma warning(disable : 4146)
+  #pragma warning(disable : 4146)
 #endif
 
 /* Slightly optimised reference implementation of the Mersenne Twister */
@@ -127,7 +129,11 @@ unsigned long rndl() {
 #else
 unsigned long rndl() {
 	unsigned long r;
-	int bytes_read = getrandom(&r, sizeof(unsigned long), GRND_NONBLOCK );
+	#if defined(__unix__) || defined(__unix)
+    int bytes_read = getrandom(&r, sizeof(unsigned long), GRND_NONBLOCK);
+  #else
+    int bytes_read = read(open("/dev/urandom", O_RDONLY), &r, sizeof(unsigned long));
+  #endif
 	if (bytes_read > 0) {
 		return r;
 	}
