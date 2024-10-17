@@ -22,7 +22,7 @@
 // Internal SSE RIPEMD-160 implementation.
 namespace ripemd160sse {
 
-#ifdef WIN64
+#ifdef _MSC_VER
   static const __declspec(align(16)) uint32_t _init[] = {
 #else
   static const uint32_t _init[] __attribute__ ((aligned (16))) = {
@@ -44,12 +44,12 @@ namespace ripemd160sse {
 
 #ifdef WIN64
 
-#define not(x) _mm_andnot_si128(x, _mm_cmpeq_epi32(_mm_setzero_si128(), _mm_setzero_si128()))
+#define bitwise_not(x) _mm_andnot_si128(x, _mm_cmpeq_epi32(_mm_setzero_si128(), _mm_setzero_si128()))
 #define f1(x,y,z) _mm_xor_si128(x, _mm_xor_si128(y, z))
 #define f2(x,y,z) _mm_or_si128(_mm_and_si128(x,y),_mm_andnot_si128(x,z))
-#define f3(x,y,z) _mm_xor_si128(_mm_or_si128(x,not(y)),z)
+#define f3(x,y,z) _mm_xor_si128(_mm_or_si128(x,bitwise_not(y)),z)
 #define f4(x,y,z) _mm_or_si128(_mm_and_si128(x,z),_mm_andnot_si128(z,y))
-#define f5(x,y,z) _mm_xor_si128(x,_mm_or_si128(y,not(z)))
+#define f5(x,y,z) _mm_xor_si128(x,_mm_or_si128(y,bitwise_not(z)))
 
 #else
 
@@ -60,7 +60,6 @@ namespace ripemd160sse {
 #define f5(x,y,z) _mm_xor_si128(x,_mm_or_si128(y,~(z)))
 
 #endif
-
 
 #define add3(x0, x1, x2 ) _mm_add_epi32(_mm_add_epi32(x0, x1), x2)
 #define add4(x0, x1, x2, x3) _mm_add_epi32(_mm_add_epi32(x0, x1), _mm_add_epi32(x2, x3))
@@ -300,11 +299,11 @@ namespace ripemd160sse {
 #ifdef WIN64
 
 #define DEPACK(d,i) \
-((uint32_t *)d)[0] = s[0].m128i_u32[i]; \
-((uint32_t *)d)[1] = s[1].m128i_u32[i]; \
-((uint32_t *)d)[2] = s[2].m128i_u32[i]; \
-((uint32_t *)d)[3] = s[3].m128i_u32[i]; \
-((uint32_t *)d)[4] = s[4].m128i_u32[i];
+    ((uint32_t *)d)[0] = _mm_extract_epi32(s[0], i); \
+    ((uint32_t *)d)[1] = _mm_extract_epi32(s[1], i); \
+    ((uint32_t *)d)[2] = _mm_extract_epi32(s[2], i); \
+    ((uint32_t *)d)[3] = _mm_extract_epi32(s[3], i); \
+    ((uint32_t *)d)[4] = _mm_extract_epi32(s[4], i);
 
 #else
 

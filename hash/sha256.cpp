@@ -436,9 +436,12 @@ void sha256(unsigned char *input, size_t length, unsigned char *digest) {
 
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-const-variable"
 const uint8_t sizedesc_32[8] = { 0,0,0,0,0,0,1,0 };
 const uint8_t sizedesc_33[8] = { 0,0,0,0,0,0,1,8 };
 const uint8_t sizedesc_65[8] = { 0,0,0,0,0,0,2,8 };
+#pragma GCC diagnostic pop
 
 void sha256_33(unsigned char *input, unsigned char *digest) {
 
@@ -496,13 +499,14 @@ void sha256_checksum(uint8_t *input, int length, uint8_t *checksum) {
 }
 
 std::string sha256_hex(unsigned char *digest) {
+    char buf[2 * 32 + 1];
+    buf[2 * 32] = '\0';
 
-    char buf[2*32+1];
-    buf[2*32] = 0;
-    for (int i = 0; i < 32; i++)
-        sprintf(buf+i*2,"%02x",digest[i]);
+    for (int i = 0; i < 32; i++) {
+        snprintf(buf + i * 2, sizeof(buf) - i * 2, "%02x", digest[i]);
+    }
+
     return std::string(buf);
-
 }
 
 bool sha256_file(const char* file_name, uint8_t* checksum) {

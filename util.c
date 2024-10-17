@@ -1,6 +1,6 @@
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "util.h"
 
@@ -101,22 +101,24 @@ char *tohex(char *ptr,int length){
   buffer = (char *) malloc((length * 2)+1);
   for (int i = 0; i <length; i++) {
     c = ptr[i];
-	sprintf((char*) (buffer + offset),"%.2x",c);
+	snprintf((char*) (buffer + offset), sizeof(buffer) - offset, "%.2x", c);
 	offset+=2;
   }
   buffer[length*2] = 0;
   return buffer;
 }
 
-void tohex_dst(char *ptr,int length,char *dst)	{
-  int offset = 0;
-  unsigned char c;
-  for (int i = 0; i <length; i++) {
-    c = ptr[i];
-	sprintf((char*) (dst + offset),"%.2x",c);
-	offset+=2;
-  }
-  dst[length*2] = 0;
+void tohex_dst(char *ptr, int length, char *dst) {
+    int offset = 0;
+    unsigned char c;
+    size_t size = length * 2 + 1;
+
+    for (int i = 0; i < length; i++) {
+        c = ptr[i];
+        snprintf((char*) (dst + offset), size - offset, "%.2x", c);
+        offset += 2;
+    }
+    dst[length * 2] = '\0';
 }
 
 int hexs2bin(char *hex, unsigned char *out)	{

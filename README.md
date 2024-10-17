@@ -54,6 +54,59 @@ Please read the CHANGELOG.md to see the new changes
 
 # Download and build
 
+- Beta Multiplaforma build
+
+- MAC OS System
+
+Please install on your system
+
+- Git
+- Brew
+- XCode-Select
+- GNU components
+- OpenSSL
+- GMP
+
+To install this components
+
+
+- Brew
+
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+- Git
+
+```
+brew install git
+```
+
+- XCode
+
+```
+xcode-select --install
+```
+
+- GNU Components
+
+```
+brew install make automake gcc
+
+```
+
+- Openssl
+
+```
+brew install openssl
+```
+
+- GMP
+
+```
+brew install gmp
+```
+
 This program was made in a linux environment.
 if you are windows user i strongly recommend to use WSL enviroment on Windows.
 it is available in the Microsoft store
@@ -91,10 +144,17 @@ don't forget change to the keyhunt directory (But i'm not here to teach you linu
 cd keyhunt
 ```
 
-First compile:
+First compile(Linux && Mac OS):
 
 ```
 make
+```
+
+Windows(Compiled by WSL
+):
+
+```
+make windows
 ```
 
 if you have problems compiling the `main` version you can compile the `legacy` version

@@ -32,14 +32,15 @@
 
 #define	secret	/* can't use in variable-time operations, should zero */
 
-#define	FOR5(X, STMT) do						      \
-{									      \
-	(X) = 0; (STMT);						      \
-	(X) = 1; (STMT);						      \
-	(X) = 2; (STMT);						      \
-	(X) = 3; (STMT);						      \
-	(X) = 4; (STMT);						      \
+#define FOR5(X, STMT) do                         \
+{                                                \
+    (X) = 0; (STMT);                             \
+    (X) = 1; (STMT);                             \
+    (X) = 2; (STMT);                             \
+    (X) = 3; (STMT);                             \
+    (X) = 4; (STMT);                             \
 } while (0)
+
 
 static inline secret uint64_t
 rol64(secret uint64_t v, unsigned c)
@@ -55,21 +56,22 @@ keccakf1600_theta(secret uint64_t A[25])
 	unsigned y;
 
 	C0 = C1 = C2 = C3 = C4 = 0;
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-	FOR5(y, {
-		C0 ^= A[0 + 5*y];
-		C1 ^= A[1 + 5*y];
-		C2 ^= A[2 + 5*y];
-		C3 ^= A[3 + 5*y];
-		C4 ^= A[4 + 5*y];
-	});
-	FOR5(y, {
-		A[0 + 5*y] ^= C4 ^ rol64(C1, 1);
-		A[1 + 5*y] ^= C0 ^ rol64(C2, 1);
-		A[2 + 5*y] ^= C1 ^ rol64(C3, 1);
-		A[3 + 5*y] ^= C2 ^ rol64(C4, 1);
-		A[4 + 5*y] ^= C3 ^ rol64(C0, 1);
-	});
+	for (y = 0; y < 5; ++y) {
+		C0 ^= A[0 + 5 * y];
+		C1 ^= A[1 + 5 * y];
+		C2 ^= A[2 + 5 * y];
+		C3 ^= A[3 + 5 * y];
+		C4 ^= A[4 + 5 * y];
+	}
+	for (y = 0; y < 5; ++y) {
+		A[0 + 5 * y] ^= C4 ^ rol64(C1, 1);
+		A[1 + 5 * y] ^= C0 ^ rol64(C2, 1);
+		A[2 + 5 * y] ^= C1 ^ rol64(C3, 1);
+		A[3 + 5 * y] ^= C2 ^ rol64(C4, 1);
+		A[4 + 5 * y] ^= C3 ^ rol64(C0, 1);
+	}
 #pragma GCC diagnostic pop
 }
 
@@ -115,19 +117,22 @@ keccakf1600_chi(secret uint64_t A[25])
 	secret uint64_t B0, B1, B2, B3, B4;
 	unsigned y;
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-	FOR5(y, {
-		B0 = A[0 + 5*y];
-		B1 = A[1 + 5*y];
-		B2 = A[2 + 5*y];
-		B3 = A[3 + 5*y];
-		B4 = A[4 + 5*y];
-		A[0 + 5*y] ^= ~B1 & B2;
-		A[1 + 5*y] ^= ~B2 & B3;
-		A[2 + 5*y] ^= ~B3 & B4;
-		A[3 + 5*y] ^= ~B4 & B0;
-		A[4 + 5*y] ^= ~B0 & B1;
-	});
+	for (y = 0; y < 5; ++y) {
+		B0 = A[0 + 5 * y];
+		B1 = A[1 + 5 * y];
+		B2 = A[2 + 5 * y];
+		B3 = A[3 + 5 * y];
+		B4 = A[4 + 5 * y];
+
+		A[0 + 5 * y] ^= ~B1 & B2;
+		A[1 + 5 * y] ^= ~B2 & B3;
+		A[2 + 5 * y] ^= ~B3 & B4;
+		A[3 + 5 * y] ^= ~B4 & B0;
+		A[4 + 5 * y] ^= ~B0 & B1;
+	}
+
 #pragma GCC diagnostic pop
 }
 

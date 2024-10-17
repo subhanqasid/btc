@@ -1,5 +1,4 @@
-/* RMD160.H - header file for RMD160.C
- */
+/* RMD160.H - header file for RMD160.C */
 #ifndef _RMD160_H_
 #define _RMD160_H_
 
@@ -21,18 +20,15 @@
 
 /* RIPEMD160 context. */
 typedef struct RMD160Context {
- uint32_t key[RIPEMD160_BLOCKWORDS];
- uint32_t iv[RIPEMD160_HASHWORDS];
- uint32_t bytesHi, bytesLo;
+    uint32_t key[RIPEMD160_BLOCKWORDS];
+    uint32_t iv[RIPEMD160_HASHWORDS];
+    uint32_t bytesHi, bytesLo;
 } RMD160_CTX;
 
 #define RIPEMD160Context RMD160Context
 
-#ifdef _WIN64
-#else
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 void   RMD160Init(RMD160_CTX *);
@@ -40,11 +36,10 @@ void   RMD160Update(RMD160_CTX *, const unsigned char *, unsigned int);
 void   RMD160Final(unsigned char [RMD160_HASHBYTES], RMD160_CTX *);
 char * RMD160End(RMD160_CTX *, char *);
 char * RMD160File(const char *, char *);
-void RMD160Data(const unsigned char *, unsigned int, char *);
-#ifdef _WIN64
-#else
-__END_DECLS
+void   RMD160Data(const unsigned char *, unsigned int, char *);
 
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _RMD160_H_ */
