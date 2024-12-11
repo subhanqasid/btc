@@ -1648,19 +1648,20 @@ void *thread_process_bsgs(void *vargp)	{
 		point_aux = secp->ComputePublicKey(&km);
 		
 		
-
-		if(base_point.equals(OriginalPointsBSGS))	{
-			hextemp = base_key.GetBase16();
+                  // Added Dec. 2024
+		if(base_point.equals(OriginalPointsBSGS)) {
+		handle_key_found(base_key, base_point);
+		bsgs_found=1
+			
 			printf("[+] Thread Key found privkey %s  \n",hextemp);
-			aux_c = secp->GetPublicKeyHex(OriginalPointsBSGScompressed,base_point);
 			printf("[+] Publickey %s\n",aux_c);
 			
 			pthread_mutex_lock(&write_keys);
 
 			filekey = fopen("KEYFOUNDKEYFOUND.txt","a");
-			if(filekey != NULL)	{
-				fprintf(filekey,"Key found privkey %s\nPublickey %s\n",hextemp,aux_c);
-				fclose(filekey);
+	        if(filekey != NULL)	{
+			fprintf(filekey,"Key found privkey %s\nPublickey %s\n",hextemp,aux_c);
+			fclose(filekey);
 			}
 			BSGSkeyfound.Set(&base_key);
 			pthread_mutex_unlock(&write_keys);
@@ -1668,72 +1669,84 @@ void *thread_process_bsgs(void *vargp)	{
 			free(hextemp);
 			free(aux_c);
 			
-			bsgs_found = 1;
+			//bsgs_found = 1;
 		}
 		else	{
 
-			startP  = secp->AddDirect(OriginalPointsBSGS,point_aux);
+			startP  = secp->AddDirect(OriginalPointsBSGS, point_aux);
 			
-			uint32_t j = 0;
-			while( j < cycles && bsgs_found == 0 )	{
-			
-				int i;
-				
-				for(i = 0; i < hLength; i++) {
-					dx[i].ModSub(&GSn[i].x,&startP.x);
-				}
-				dx[i].ModSub(&GSn[i].x,&startP.x);  // For the first point
-				dx[i+1].ModSub(&_2GSn.x,&startP.x); // For the next center point
-
-				// Grouped ModInv
+			for (uint32_t j = 0; j < cycles && !bsgs_found; j++) {
+		        // compute dx values and batch invert them
+			for (int i = 0; i < hLength; i++) {
+			dx[i].ModSub(&GSn[i].x, &startP.x);
+			}
+			dx[hLenght].ModSub(&_2GSn.x, &startP.x); // Last point
+			}
+		
 				grp->ModInv();
+	    
+
+				// Compute all points in the batch
+				pts[CPU_GRP_SIZE / 2] = startP; // Center point
+				compute_points_batch(pts, dx, dy, dyn, _s, _p, GSn, startP);
 				
-				/*
-				We use the fact that P + i*G and P - i*G has the same deltax, so the same inverse
-				We compute key in the positive and negative way from the center of the group
-				*/
+				//Check against bloom filter
+				for (int i=0; i < CPU_GRP_SIZE && !bsgs_found; i++) {
+				  if (check_bloom_filter(pts[i])) {
+				      if (bsgs_secondcheck(&base_key, (j * CPU_GRP_SIZE) + i, &keyfound)) {
+				          handle_key_found(keyfound, secp->ComputePublicKey(&keyfound));
+				          bsgs_found=1;
+				          }
+				      }
+				      
+				  }
+				  
+				  // Advance startP to the next bach
+				  advance_start_point(startP, dx[hLenght + 1], dy, _s, _p, _2GSn);
+			      }
+			      
+			    }
+			    
+//Helper function : This function calculates all points in a batch (positive and negative sides)
+void compute_points_batch(Point *pts, const Int *dx, Int &dy, Int &dyn, Int &_s, Int &_p, const Point *GSn, const Point &startP) {
+    for (int i = 0; i < hLength; i++) {
+        // Positive side
+        dy.ModSub(&GSn[i].y, &pts[CPU_GRP_SIZE / 2].y);
+        _s.ModMulK1(&dy, &dx[i]);
+        _p.ModSquareK1(&_s);
+        pts[CPU_GRP_SIZE / 2 + i + 1].x.ModSub(&_p, &GSn[i].x).ModSub(&pts[CPU_GRP_SIZE / 2].x);
 
-				// center point
-				pts[CPU_GRP_SIZE / 2] = startP;
-				
-				for(i = 0; i<hLength; i++) {
+        // Negative side
+        dyn.ModNeg(&GSn[i].y);
+        dyn.ModSub(&pts[CPU_GRP_SIZE / 2].y);
+        _s.ModMulK1(&dyn, &dx[i]);
+        _p.ModSquareK1(&_s);
+        pts[CPU_GRP_SIZE / 2 - i - 1].x.ModSub(&_p, &GSn[i].x).ModSub(&pts[CPU_GRP_SIZE / 2].x);
+    }
+}
 
-					pp = startP;
-					pn = startP;
+// This function encapsulates Bloom filter checking logic
+bool check_bloom_filter(const Point &pt) {
+    unsigned char x_raw[32];
+    pt.x.Get32Bytes(x_raw);
+    return bloom_check(&bloom_bP[x_raw[0]], x_raw, 32);
+}
 
-					// P = startP + i*G
-					dy.ModSub(&GSn[i].y,&pp.y);
+//This function updates the startP to the next batch point:
+bool check_bloom_filter(const Point &pt) {
+    unsigned char x_raw[32];
+    pt.x.Get32Bytes(x_raw);
+    return bloom_check(&bloom_bP[x_raw[0]], x_raw, 32);
+}
 
-					_s.ModMulK1(&dy,&dx[i]);        // s = (p2.y-p1.y)*inverse(p2.x-p1.x);
-					_p.ModSquareK1(&_s);            // _p = pow2(s)
 
-					pp.x.ModNeg();
-					pp.x.ModAdd(&_p);
-					pp.x.ModSub(&GSn[i].x);           // rx = pow2(s) - p1.x - p2.x;
-					
-#if 0 /* For this BSGS we don't neet to calculate the Y value of intermediate points */
-pp.y.ModSub(&GSn[i].x,&pp.x);
-pp.y.ModMulK1(&_s);
-pp.y.ModSub(&GSn[i].y);           // ry = - p2.y - s*(ret.x-p2.x);  
-#endif
 
-					// P = startP - i*G  , if (x,y) = i*G then (x,-y) = -i*G
-					dyn.Set(&GSn[i].y);
-					dyn.ModNeg();
-					dyn.ModSub(&pn.y);
-
-					_s.ModMulK1(&dyn,&dx[i]);       // s = (p2.y-p1.y)*inverse(p2.x-p1.x);
-					_p.ModSquareK1(&_s);            // _p = pow2(s)
-
-					pn.x.ModNeg();
-					pn.x.ModAdd(&_p);
-					pn.x.ModSub(&GSn[i].x);          // rx = pow2(s) - p1.x - p2.x;
-
-#if 0	/* For this BSGS we don't neet to calculate the Y value of intermediate points */
-pn.y.ModSub(&GSn[i].x,&pn.x);
-pn.y.ModMulK1(&_s);
-pn.y.ModAdd(&GSn[i].y);          // ry = - p2.y - s*(ret.x-p2.x);  
-#endif
+	
+//#if 0	/* For this BSGS we don't neet to calculate the Y value of intermediate points */
+//pn.y.ModSub(&GSn[i].x,&pn.x);
+//pn.y.ModMulK1(&_s);
+//pn.y.ModAdd(&GSn[i].y);          // ry = - p2.y - s*(ret.x-p2.x);  
+//#endif
 
 
 					pts[CPU_GRP_SIZE / 2 + (i + 1)] = pp;
@@ -1755,11 +1768,11 @@ pn.y.ModAdd(&GSn[i].y);          // ry = - p2.y - s*(ret.x-p2.x);
 				pn.x.ModSub(&GSn[i].x);
 
 
-#if 0 /* For this BSGS we don't neet to calculate the Y value of intermediate points */
-pn.y.ModSub(&GSn[i].x,&pn.x);
-pn.y.ModMulK1(&_s);
-pn.y.ModAdd(&GSn[i].y);
-#endif
+//#if 0 /* For this BSGS we don't neet to calculate the Y value of intermediate points */
+//pn.y.ModSub(&GSn[i].x,&pn.x);
+//pn.y.ModMulK1(&_s);
+//pn.y.ModAdd(&GSn[i].y);
+//#endif
 
 				pts[0] = pn;
 				
