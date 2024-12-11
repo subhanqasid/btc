@@ -1648,13 +1648,10 @@ void *thread_process_bsgs(void *vargp)	{
 		point_aux = secp->ComputePublicKey(&km);
 		
 		
-                  // Added/changed by Marko Denda <marko.denda@gmail.com>  , Dec. 2024
-		  // Code optimization: Use batch inversion for computing dx[i] values.
-		  // Reduce branching inside loops for better instruction pipelining.
-		
+                  // Added Dec. 2024
 		if(base_point.equals(OriginalPointsBSGS)) {
-			handle_key_found(base_key, base_point);
-			bsgs_found=1
+		handle_key_found(base_key, base_point);
+		bsgs_found=1
 			
 			printf("[+] Thread Key found privkey %s  \n",hextemp);
 			printf("[+] Publickey %s\n",aux_c);
@@ -1672,6 +1669,7 @@ void *thread_process_bsgs(void *vargp)	{
 			free(hextemp);
 			free(aux_c);
 			
+			//bsgs_found = 1;
 		}
 		else	{
 
@@ -1708,12 +1706,47 @@ void *thread_process_bsgs(void *vargp)	{
 			      }
 			      
 			    }
+			    
+//Helper function : This function calculates all points in a batch (positive and negative sides)
+void compute_points_batch(Point *pts, const Int *dx, Int &dy, Int &dyn, Int &_s, Int &_p, const Point *GSn, const Point &startP) {
+    for (int i = 0; i < hLength; i++) {
+        // Positive side
+        dy.ModSub(&GSn[i].y, &pts[CPU_GRP_SIZE / 2].y);
+        _s.ModMulK1(&dy, &dx[i]);
+        _p.ModSquareK1(&_s);
+        pts[CPU_GRP_SIZE / 2 + i + 1].x.ModSub(&_p, &GSn[i].x).ModSub(&pts[CPU_GRP_SIZE / 2].x);
+
+        // Negative side
+        dyn.ModNeg(&GSn[i].y);
+        dyn.ModSub(&pts[CPU_GRP_SIZE / 2].y);
+        _s.ModMulK1(&dyn, &dx[i]);
+        _p.ModSquareK1(&_s);
+        pts[CPU_GRP_SIZE / 2 - i - 1].x.ModSub(&_p, &GSn[i].x).ModSub(&pts[CPU_GRP_SIZE / 2].x);
+    }
+}
+
+// This function encapsulates Bloom filter checking logic
+bool check_bloom_filter(const Point &pt) {
+    unsigned char x_raw[32];
+    pt.x.Get32Bytes(x_raw);
+    return bloom_check(&bloom_bP[x_raw[0]], x_raw, 32);
+}
+
+//This function updates the startP to the next batch point:
+bool check_bloom_filter(const Point &pt) {
+    unsigned char x_raw[32];
+    pt.x.Get32Bytes(x_raw);
+    return bloom_check(&bloom_bP[x_raw[0]], x_raw, 32);
+}
+
+
+
 	
-#if 0	/* For this BSGS we don't neet to calculate the Y value of intermediate points */
-pn.y.ModSub(&GSn[i].x,&pn.x);
-pn.y.ModMulK1(&_s);
-pn.y.ModAdd(&GSn[i].y);          // ry = - p2.y - s*(ret.x-p2.x);  
-#endif
+//#if 0	/* For this BSGS we don't neet to calculate the Y value of intermediate points */
+//pn.y.ModSub(&GSn[i].x,&pn.x);
+//pn.y.ModMulK1(&_s);
+//pn.y.ModAdd(&GSn[i].y);          // ry = - p2.y - s*(ret.x-p2.x);  
+//#endif
 
 
 					pts[CPU_GRP_SIZE / 2 + (i + 1)] = pp;
@@ -1735,11 +1768,11 @@ pn.y.ModAdd(&GSn[i].y);          // ry = - p2.y - s*(ret.x-p2.x);
 				pn.x.ModSub(&GSn[i].x);
 
 
-#if 0 /* For this BSGS we don't neet to calculate the Y value of intermediate points */
-pn.y.ModSub(&GSn[i].x,&pn.x);
-pn.y.ModMulK1(&_s);
-pn.y.ModAdd(&GSn[i].y);
-#endif
+//#if 0 /* For this BSGS we don't neet to calculate the Y value of intermediate points */
+//pn.y.ModSub(&GSn[i].x,&pn.x);
+//pn.y.ModMulK1(&_s);
+//pn.y.ModAdd(&GSn[i].y);
+//#endif
 
 				pts[0] = pn;
 				
